@@ -1,10 +1,12 @@
-package com.checkout.payment.gateway.enums;
+package com.checkout.payment.gateway.dto;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum PaymentStatus {
   AUTHORIZED("Authorized"),
   DECLINED("Declined"),
+  IN_PROGRESS("In Progress"),
+  FAILED("Failed"),
   REJECTED("Rejected");
 
   private final String name;
@@ -17,4 +19,5 @@ public enum PaymentStatus {
   public String getName() {
     return this.name;
   }
+
 }

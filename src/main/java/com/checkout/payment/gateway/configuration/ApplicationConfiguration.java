@@ -16,4 +16,5 @@ public class ApplicationConfiguration {
         .setReadTimeout(Duration.ofMillis(10000))
         .build();
   }
+
 }
