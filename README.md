@@ -1,27 +1,32 @@
 # Implementation Detail
 
 ### Assumptions
-- Most constraints have been formalised from the initial acceptance criteria
+- Most constraints have been formalised from the initial acceptance criteria (refer to this [README.md](https://github.com/cko-recruitment/))
 - Idempotency was a concern therefore a basic idempotency check has been implemented on payment intent prior to sending to the bank
-- Using the same idempotency key, if a payment is not in progress, we can return the payment details authorized/declined to follow idempotency protocol
+- If the same idempotency key is provided and the payment is not in progress, we can return the payment details authorized/declined to follow idempotency protocol
 - Although the persistence layer is in memory, it is good practice to avoid saving raw card details, therefore they have been encrypted via Tokenization
+- Payment has been stored prior to calling the bank in case we close connection after payment is processed
 - Dummy vault has been used to retrieve a dummy secret key to encrypt the card details
-- Requirements state to only be able to retrieve Authorized/Declined payments on the GET request, therefore they are filtered from the result. We will not return Failed payments even if they UUID exists..this was a trade-off made so that we can store initial payment details before calling the bank.
+- Requirements state to only be able to retrieve Authorized/Declined payments on the GET request, therefore they are filtered from the result. We will not return Failed payments even if they UUID exists..
+- It was unclear whether the expiryMonth and expiryYear should have been included in the GET/POST response, albeit I have added anyway
+- Requirements state to not allow card details in the "future", this can be quite ambiguous to what we determine the current month to be..
+- Card expiry month/year have been interpreted so that `4/2026` for example would be valid up until end of the last day of `4/2026`
 
-### Improvements
+### Future Improvements
+- Rate limiting on the Gateway would also be ideal to deny service when a given threshold is reached
+- Retry policy with backoff should be configured on RestTemplate when reaching out to the bank for resiliency
 - Although we have thread safety on the concurrent hashmap, it would be nice to have the persistence of the cache and payment repository in the same locked transaction
 - Sending the raw card details in to the payment-gateway poses a compliance risk, therefore it would be nice to receive the tokenized details via the request
-- Although the payments are idempotent in nature, they are non recoverable in failed state (new idempotent request to be created). There is also no check on change of payload if idempotency header remains the same
-- Idempotency keys have no TTL therefore we cannot currently recover if a payment is stuck in_progress. We should have a retry mechanism to retry the payment and then fail if unable to process..
 - Tokenization also has no TTL but this process would be delegated to some secure vault that manages raw card details
+- Although the payments are idempotent in nature, they are non-recoverable in failed state (new idempotent request to be created). There is also no check on change of payload if idempotency header remains the same
+- Idempotency keys have no TTL therefore we cannot currently recover if a payment is stuck in_progress. We should have a retry mechanism to retry the payment and then fail if unable to process..
 - Authentication should be passed into the gateway to validate the user, bearer token can be implemented at a later date
-- Rate limiting on the Gateway would also be ideal to deny service when a given threshold is reached
 - It would be nice to decouple the payment process, so we can submit a payment "in_progress" response.. this way we can process the payment asynchronously..
 
 ### Instructions to run
 
-- docker-compose up will also spin up the payment gateway which will depend on the bank simulator - this should be all thats needed to test the flow
-- be sure to pass a valid UUID Idempotency-Key header into the POST request as this is required!
+- `docker-compose up` will also spin up the payment gateway which will depend on the bank simulator - this should be all thats needed to test the flow
+- *Pass a valid UUID Idempotency-Key header into the POST request as this is required!*
 
 ##
 ##
